@@ -7,7 +7,8 @@ client = TestClient(app)
 def test_homepage():
     r = client.get("/")
     assert r.status_code == 200
-    assert "JobDisha India" in r.text
+    assert "All India Jobs" in r.text
+    assert "Naukri Jobs India" in r.text
     assert "Find Jobs" in r.text
     print("✅ Homepage test passed (HTTP 200)")
 

@@ -3,12 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}JobDisha India | Find Jobs. Build Your Career.{% endblock %}</title>
-    <meta name="description" content="{% block description %}Complete All-India job search and career platform. Discover genuine IT, Non-IT, and Government jobs with direct official application links.{% endblock %}">
-    <meta property="og:title" content="All India Jobs — Govt &amp; Private Recruitment Portal">
+    <title>{% block title %}All India Jobs — Naukri Jobs India | Govt &amp; Private Jobs Portal{% endblock %}</title>
+    <meta name="description" content="{% block description %}All India Jobs (Naukri Jobs India) — Search verified Government, Railway, PSU, IT, Non-IT, and Fresher vacancies across all 28 Indian States &amp; 8 UTs with direct official apply links.{% endblock %}">
+    <meta name="keywords" content="All India Jobs, Naukri Jobs India, Govt Jobs India, Private Jobs, Sarkari Naukri 2026, IT Jobs, Fresher Jobs India, Free ATS Resume Builder">
+    <link rel="canonical" href="{{ request.url | string }}">
+    <meta property="og:site_name" content="All India Jobs — Naukri Jobs India">
+    <meta property="og:title" content="All India Jobs — Naukri Jobs India | Govt &amp; Private Jobs">
     <meta property="og:description" content="Explore genuine Government &amp; Private vacancies across all 28 Indian States &amp; 8 UTs with direct official apply links and Free ATS Resume Builder.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="{{ request.url | string }}">
     <meta property="og:image" content="/static/images/logo-full.png">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "All India Jobs — Naukri Jobs India",
+      "alternateName": ["Naukri Jobs India", "All India Jobs"],
+      "url": "{{ request.base_url }}",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "{{ request.base_url }}jobs?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
     {% if GOOGLE_SITE_VERIFICATION %}
     <meta name="google-site-verification" content="{{ GOOGLE_SITE_VERIFICATION }}">
     {% endif %}
@@ -205,7 +223,7 @@
 
             <!-- Bottom -->
             <div class="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-                <p>&copy; 2026 JobDisha India. All rights reserved. Built with Python FastAPI & Turso Cloud.</p>
+                <p>&copy; 2026 All India Jobs (Naukri Jobs India). All rights reserved. Find &bull; Apply &bull; Grow.</p>
                 <div class="flex items-center gap-3">
                     <span>Serving all 28 Indian States & 8 Union Territories</span>
                 </div>
