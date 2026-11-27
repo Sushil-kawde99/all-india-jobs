@@ -52,7 +52,11 @@ def test_resume_builder():
     r = client.get("/resume-builder")
     assert r.status_code == 200
     assert "ATS Resume Builder" in r.text
-    print("✅ Resume Builder test passed (HTTP 200)")
+    assert "print-container" in r.text
+    assert 'py-8 no-print' not in r.text
+    for fld in ('r-link', 'pv-link', 'r-proj-title', 'r-certs', 'r-langs'):
+        assert fld in r.text
+    print("✅ Resume Builder & Non-Blank Print Layout test passed (HTTP 200)")
 
 def test_salary_calculator():
     r = client.get("/salary-calculator")
