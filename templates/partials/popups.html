@@ -1,0 +1,417 @@
+<!-- JobDisha India: Global SaaS Toast, Confirmation Modal & Alert Popup System -->
+<div id="jd-toast-container" class="fixed top-5 right-5 z-[110] flex flex-col gap-3 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+<!-- Central Modal Popup -->
+<div id="jd-modal-backdrop" class="hidden fixed inset-0 z-[105] bg-[#101B35]/60 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity duration-200 opacity-0" aria-modal="true" role="dialog">
+    <div id="jd-modal-card" class="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 transform scale-95 transition-all duration-200 relative">
+        <button type="button" id="jd-modal-close" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-[#101B35] flex items-center justify-center text-lg font-bold transition-colors" aria-label="Close popup">&times;</button>
+        
+        <div class="flex flex-col items-center text-center">
+            <div id="jd-modal-icon-wrap" class="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-2xl shadow-sm"></div>
+            <span id="jd-modal-badge" class="hidden px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider mb-2"></span>
+            <h3 id="jd-modal-title" class="font-extrabold text-xl text-[#101B35] leading-snug"></h3>
+            <p id="jd-modal-message" class="text-sm text-slate-600 mt-2 leading-relaxed"></p>
+        </div>
+
+        <div id="jd-modal-extra" class="mt-4"></div>
+
+        <div id="jd-modal-actions" class="mt-6 flex flex-col-reverse sm:flex-row items-center justify-center gap-2.5">
+            <button type="button" id="jd-modal-secondary" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors">Close</button>
+            <button type="button" id="jd-modal-primary" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#0DAF9C] hover:bg-[#0A8F7F] text-white text-xs font-bold shadow-md transition-all">OK</button>
+        </div>
+    </div>
+</div>
+
+<style>
+@keyframes jdSlideIn {
+    from { opacity: 0; transform: translateX(24px) scale(0.97); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes jdProgress {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+.jd-toast-enter { animation: jdSlideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@media (prefers-reduced-motion: reduce) {
+    .jd-toast-enter, #jd-modal-backdrop, #jd-modal-card { animation: none !important; transition: none !important; }
+}
+</style>
+
+<script>
+(function() {
+    const TOAST_STYLES = {
+        success: { bg: 'bg-white border-emerald-200', iconBg: 'bg-emerald-100 text-emerald-600', bar: 'bg-emerald-500', icon: '✓', title: 'Success' },
+        error:   { bg: 'bg-white border-red-200', iconBg: 'bg-red-100 text-red-600', bar: 'bg-red-500', icon: '✕', title: 'Attention' },
+        warning: { bg: 'bg-white border-amber-200', iconBg: 'bg-amber-100 text-amber-600', bar: 'bg-amber-500', icon: '⚠', title: 'Notice' },
+        info:    { bg: 'bg-white border-[#0DAF9C]/30', iconBg: 'bg-[#0DAF9C]/15 text-[#0DAF9C]', bar: 'bg-[#0DAF9C]', icon: 'ℹ', title: 'JobDisha Update' }
+    };
+
+    const MODAL_THEMES = {
+        success: { iconBg: 'bg-emerald-100 text-emerald-600', badgeBg: 'bg-emerald-50 text-emerald-700 border border-emerald-200', btn: 'bg-emerald-600 hover:bg-emerald-700 text-white', icon: '✅' },
+        error:   { iconBg: 'bg-red-100 text-red-600', badgeBg: 'bg-red-50 text-red-700 border border-red-200', btn: 'bg-red-600 hover:bg-red-700 text-white', icon: '⛔' },
+        warning: { iconBg: 'bg-amber-100 text-amber-600', badgeBg: 'bg-amber-50 text-amber-800 border border-amber-200', btn: 'bg-amber-600 hover:bg-amber-700 text-white', icon: '⏰' },
+        info:    { iconBg: 'bg-[#0DAF9C]/15 text-[#0DAF9C]', badgeBg: 'bg-[#0DAF9C]/10 text-[#0A8F7F] border border-[#0DAF9C]/30', btn: 'bg-[#0DAF9C] hover:bg-[#0A8F7F] text-white', icon: '✨' }
+    };
+
+    window.jdToast = function(message, type = 'info', duration = 4200, customTitle = null) {
+        const container = document.getElementById('jd-toast-container');
+        if (!container) return;
+        const st = TOAST_STYLES[type] || TOAST_STYLES.info;
+
+        const toast = document.createElement('div');
+        toast.className = `pointer-events-auto relative overflow-hidden rounded-2xl border p-4 shadow-xl ${st.bg} jd-toast-enter`;
+        toast.innerHTML = `
+            <div class="flex items-start gap-3">
+                <div class="w-8 h-8 rounded-xl ${st.iconBg} flex items-center justify-center font-bold text-sm shrink-0">${st.icon}</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-extrabold text-[#101B35]">${customTitle || st.title}</p>
+                    <p class="text-xs text-slate-600 mt-0.5 leading-relaxed">${message}</p>
+                </div>
+                <button type="button" class="text-slate-400 hover:text-[#101B35] font-bold text-base leading-none ml-1" onclick="this.closest('.pointer-events-auto').remove()">&times;</button>
+            </div>
+            <div class="absolute bottom-0 left-0 h-1 ${st.bar}" style="animation: jdProgress ${duration}ms linear forwards;"></div>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.2s ease';
+                setTimeout(() => toast.remove(), 220);
+            }
+        }, duration);
+    };
+
+    function closeModal() {
+        const backdrop = document.getElementById('jd-modal-backdrop');
+        const card = document.getElementById('jd-modal-card');
+        if (!backdrop || !card) return;
+        backdrop.classList.add('opacity-0');
+        card.classList.add('scale-95');
+        setTimeout(() => backdrop.classList.add('hidden'), 180);
+    }
+    window.jdClosePopup = closeModal;
+
+    window.jdPopup = function({
+        title = 'Notice',
+        message = '',
+        type = 'info',
+        icon = null,
+        badge = null,
+        extraHtml = '',
+        primaryText = 'OK',
+        primaryHref = null,
+        onPrimary = null,
+        secondaryText = null,
+        onSecondary = null
+    }) {
+        const backdrop = document.getElementById('jd-modal-backdrop');
+        const card = document.getElementById('jd-modal-card');
+        if (!backdrop || !card) return;
+
+        const theme = MODAL_THEMES[type] || MODAL_THEMES.info;
+        const iconWrap = document.getElementById('jd-modal-icon-wrap');
+        iconWrap.className = `w-14 h-14 rounded-2xl flex items-center justify-center mb-4 text-2xl shadow-sm ${theme.iconBg}`;
+        iconWrap.textContent = icon || theme.icon;
+
+        const badgeEl = document.getElementById('jd-modal-badge');
+        if (badge) {
+            badgeEl.textContent = badge;
+            badgeEl.className = `inline-block px-3 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider mb-2 ${theme.badgeBg}`;
+        } else {
+            badgeEl.className = 'hidden';
+        }
+
+        document.getElementById('jd-modal-title').textContent = title;
+        document.getElementById('jd-modal-message').innerHTML = message;
+        document.getElementById('jd-modal-extra').innerHTML = extraHtml || '';
+
+        const btnPrimary = document.getElementById('jd-modal-primary');
+        const btnSecondary = document.getElementById('jd-modal-secondary');
+
+        btnPrimary.textContent = primaryText;
+        btnPrimary.className = `w-full sm:w-auto px-6 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all cursor-pointer ${theme.btn}`;
+        btnPrimary.onclick = function() {
+            closeModal();
+            if (onPrimary) onPrimary();
+            if (primaryHref) window.location.href = primaryHref;
+        };
+
+        if (secondaryText) {
+            btnSecondary.classList.remove('hidden');
+            btnSecondary.textContent = secondaryText;
+            btnSecondary.onclick = function() {
+                closeModal();
+                if (onSecondary) onSecondary();
+            };
+        } else {
+            btnSecondary.classList.add('hidden');
+        }
+
+        backdrop.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            backdrop.classList.remove('opacity-0');
+            card.classList.remove('scale-95');
+        });
+    };
+
+    window.jdConfirm = function({
+        title = 'Confirm Action',
+        message = 'Are you sure you want to proceed?',
+        confirmText = 'Yes, Confirm',
+        cancelText = 'Cancel',
+        danger = false,
+        onConfirm
+    }) {
+        window.jdPopup({
+            title,
+            message,
+            type: danger ? 'error' : 'warning',
+            icon: danger ? '🗑️' : '❓',
+            badge: danger ? 'Confirmation Required' : 'Please Confirm',
+            primaryText: confirmText,
+            secondaryText: cancelText,
+            onPrimary: onConfirm
+        });
+    };
+
+    // Modal backdrop & Escape close listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        const backdrop = document.getElementById('jd-modal-backdrop');
+        const closeBtn = document.getElementById('jd-modal-close');
+        if (closeBtn) closeBtn.addEventListener('click', closeModal);
+        if (backdrop) {
+            backdrop.addEventListener('click', function(e) {
+                if (e.target === backdrop) closeModal();
+            });
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && backdrop && !backdrop.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+
+        // Intercept Apply clicks on expired jobs cleanly across all pages
+        document.body.addEventListener('click', function(e) {
+            const expiredBtn = e.target.closest('.apply-expired-btn');
+            if (expiredBtn) {
+                e.preventDefault();
+                const jobTitle = expiredBtn.getAttribute('data-title') || 'This vacancy';
+                const lastDate = expiredBtn.getAttribute('data-lastdate') || 'recently';
+                window.jdPopup({
+                    title: 'Application Closed (मुदत संपली आहे)',
+                    badge: 'Deadline Expired • ' + lastDate,
+                    icon: '⏳',
+                    type: 'warning',
+                    message: `<strong>${jobTitle}</strong> या नोकरीसाठी अर्ज करण्याची अंतिम तारीख (<strong>${lastDate}</strong>) उलटून गेली आहे.<br><br>त्यामुळे या नोकरीची अर्ज लिंक बंद केली आहे. मुदतवाढ (Date Extension) मिळाल्यास ती पुन्हा सक्रिय केली जाईल.`,
+                    primaryText: 'Explore Open Jobs →',
+                    primaryHref: '/jobs',
+                    secondaryText: 'Close'
+                });
+                return;
+            }
+
+            // Global Save Bookmark toggle
+            const saveBtn = e.target.closest('.save-btn');
+            if (saveBtn) {
+                e.preventDefault();
+                try {
+                    const raw = saveBtn.getAttribute('data-job');
+                    if (!raw) return;
+                    const jobData = JSON.parse(raw);
+                    let saved = JSON.parse(localStorage.getItem('jobdisha_saved_jobs') || '[]');
+                    const exists = saved.some(j => j.slug === jobData.slug);
+                    if (exists) {
+                        saved = saved.filter(j => j.slug !== jobData.slug);
+                        saveBtn.classList.remove('text-teal', 'bg-teal-light', 'border-teal/40');
+                        saveBtn.classList.add('text-slate-400');
+                        window.jdToast(`Removed <strong>${jobData.title}</strong> from Saved Jobs.`, 'info', 3000, 'Bookmark Removed');
+                    } else {
+                        saved.unshift({
+                            slug: jobData.slug,
+                            title: jobData.title,
+                            company: jobData.company,
+                            city: jobData.city,
+                            state: jobData.state,
+                            apply_url: jobData.apply_url,
+                            last_date: jobData.last_date || ''
+                        });
+                        saveBtn.classList.add('text-teal', 'bg-teal-light', 'border-teal/40');
+                        saveBtn.classList.remove('text-slate-400');
+                        window.jdToast(`Saved <strong>${jobData.title}</strong>! Access anytime under Saved Jobs.`, 'success', 3500, 'Job Saved ⭐');
+                    }
+                    localStorage.setItem('jobdisha_saved_jobs', JSON.stringify(saved));
+                    window.dispatchEvent(new CustomEvent('jobdisha:saved_updated'));
+                } catch (err) {
+                    console.error('Save job error:', err);
+                }
+            }
+        });
+
+        // Mark already-saved buttons on load
+        try {
+            const savedSlugs = new Set((JSON.parse(localStorage.getItem('jobdisha_saved_jobs') || '[]')).map(j => j.slug));
+            document.querySelectorAll('.save-btn').forEach(btn => {
+                const job = JSON.parse(btn.getAttribute('data-job') || '{}');
+                if (savedSlugs.has(job.slug)) {
+                    btn.classList.add('text-teal', 'bg-teal-light', 'border-teal/40');
+                    btn.classList.remove('text-slate-400');
+                }
+            });
+        } catch (err) {}
+
+        // Handle URL query alert popups across all pages cleanly
+        const params = new URLSearchParams(window.location.search);
+        let shouldClean = false;
+
+        if (params.get('error') === 'not-found') {
+            window.jdPopup({
+                title: 'Vacancy Not Found or Archived',
+                badge: 'Notice',
+                type: 'warning',
+                icon: '🔍',
+                message: 'ती नोकरी सध्या उपलब्ध नाही किंवा तिची मुदत संपून १६ दिवसांनंतर Archive मधून काढली गेली आहे. तुम्ही नवीन ओपन व्हेकन्सीज पाहू शकता.',
+                primaryText: 'Browse Active Jobs',
+                secondaryText: 'Close'
+            });
+            params.delete('error');
+            shouldClean = true;
+        }
+        if (params.has('synced')) {
+            const count = params.get('synced') || '0';
+            window.jdPopup({
+                title: 'Live Government Job Sync Complete!',
+                badge: 'Turso Cloud Updated',
+                type: 'success',
+                icon: '🎉',
+                message: `ताज्या अधिकृत सरकारी भरती फीड्समधून <strong>${count} नवीन व्हेकन्सीज</strong> Turso Cloud डेटाबेसमध्ये जोडल्या गेल्या आहेत (आणि जुन्या मुदतवाढ तपासल्या गेल्या आहेत).`,
+                primaryText: 'Great!',
+            });
+            params.delete('synced');
+            shouldClean = true;
+        }
+        if (params.has('purged')) {
+            const count = params.get('purged') || '0';
+            window.jdPopup({
+                title: 'Expired Vacancies Archived & Cleaned!',
+                badge: 'Database Optimized',
+                type: 'success',
+                icon: '🧹',
+                message: `१६+ दिवसांपूर्वी मुदत संपलेल्या <strong>${count} नोकऱ्या</strong> CSV Archive इतिहास फाईलमध्ये कायमच्या सेव्ह करून Turso Cloud डेटाबेसमधून यशस्वीपणे साफ केल्या आहेत!`,
+                primaryText: 'View Dashboard'
+            });
+            params.delete('purged');
+            shouldClean = true;
+        }
+        if (params.get('extended') === '1') {
+            window.jdPopup({
+                title: 'Deadline Extended (मुदतवाढ यशस्वी)!',
+                badge: 'Vacancy Re-Activated',
+                type: 'success',
+                icon: '📅',
+                message: 'नोकरीची अंतिम तारीख वाढवली गेली आहे. ही नोकरी आता पुन्हा वेबसाइटवर युझर्ससाठी <strong>Active & Open</strong> म्हणून दिसू लागली आहे!',
+                primaryText: 'Awesome!'
+            });
+            params.delete('extended');
+            shouldClean = true;
+        }
+        if (params.get('error') === 'forbidden') {
+            window.jdPopup({
+                title: 'Access Restricted (परवानगी नाही)',
+                badge: 'Permission Denied',
+                type: 'error',
+                icon: '🔒',
+                message: 'या कृतीसाठी फक्त मुख्य मालकालाच (Super Admin) परवानगी आहे, किंवा तुम्ही फक्त स्वतःच्या कंपनीच्याच नोकऱ्या बदलू शकता.',
+                primaryText: 'Understood'
+            });
+            params.delete('error');
+            shouldClean = true;
+        }
+        if (params.has('error_msg')) {
+            window.jdPopup({
+                title: 'Operation Failed',
+                badge: 'Notice',
+                type: 'error',
+                icon: '⚠️',
+                message: params.get('error_msg'),
+                primaryText: 'OK'
+            });
+            params.delete('error_msg');
+            shouldClean = true;
+        }
+        if (params.get('msg') === 'contact_saved') {
+            window.jdToast('Owner contact number saved! Visible immediately on Admin Login page.', 'success', 4200, 'Contact Updated 📞');
+            params.delete('msg');
+            shouldClean = true;
+        }
+        if (params.get('msg') === 'admin_created') {
+            window.jdPopup({
+                title: 'New Company Admin Created!',
+                badge: 'Sub-Admin Provisioned',
+                type: 'success',
+                icon: '👤',
+                message: 'नवीन कंपनी ॲडमिन अकाउंट यशस्वीपणे तयार झाले आहे! तुम्ही दिलेल्या परवानग्यांनुसार (All Jobs / Only Own Company) ते आता लॉगिन करू शकतात.',
+                primaryText: 'Done'
+            });
+            params.delete('msg');
+            shouldClean = true;
+        }
+        if (params.get('msg') === 'perm_updated') {
+            window.jdToast('Company Admin access permissions updated immediately!', 'success', 3500, 'Permissions Updated');
+            params.delete('msg');
+            shouldClean = true;
+        }
+        if (params.get('msg') === 'admin_deleted') {
+            window.jdToast('Company Admin account removed successfully.', 'info', 3500, 'Admin Removed');
+            params.delete('msg');
+            shouldClean = true;
+        }
+        if (params.has('reset_count')) {
+            const rc = params.get('reset_count');
+            window.jdPopup({
+                title: 'Handover Clean-Slate Reset Complete!',
+                badge: 'Archived & Cleared',
+                type: 'success',
+                icon: '🧹',
+                message: `तुमच्या सर्व <strong>${rc} नोकऱ्या</strong> सुरक्षितपणे CSV Archive History मध्ये सेव्ह केल्या गेल्या आणि लाइव्ह डेटाबेस नवीन कंपनीसाठी पूर्णपणे स्वच्छ केला गेला!`,
+                primaryText: 'Fresh Start Ready'
+            });
+            params.delete('reset_count');
+            shouldClean = true;
+        }
+        if (params.get('msg') === 'created') {
+            window.jdToast('New job vacancy published successfully to Turso Cloud!', 'success', 4000, 'Vacancy Published');
+            params.delete('msg');
+            shouldClean = true;
+        }
+        if (params.get('msg') === 'updated') {
+            window.jdToast('Vacancy details updated successfully!', 'success', 4000, 'Vacancy Updated');
+            params.delete('msg');
+            shouldClean = true;
+        }
+        if (params.get('msg') === 'deleted') {
+            window.jdToast('Vacancy moved to Archive History and removed from live database.', 'info', 4000, 'Vacancy Archived & Deleted');
+            params.delete('msg');
+            shouldClean = true;
+        }
+        if (params.has('imported')) {
+            const imp = params.get('imported');
+            window.jdPopup({
+                title: 'CSV Bulk Import Complete!',
+                badge: 'Turso Updated',
+                type: 'success',
+                icon: '📊',
+                message: `<strong>${imp}</strong> नवीन व्हेकन्सीज CSV मधून यशस्वीपणे डेटाबेसमध्ये अपलोड झाल्या आहेत.`,
+                primaryText: 'Done'
+            });
+            params.delete('imported');
+            shouldClean = true;
+        }
+
+        if (shouldClean && window.history.replaceState) {
+            const remaining = params.toString();
+            const newUrl = window.location.pathname + (remaining ? '?' + remaining : '');
+            window.history.replaceState({}, document.title, newUrl);
+        }
+    });
+})();
+</script>

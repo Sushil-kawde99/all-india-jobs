@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}My Saved Jobs | JobDisha India{% endblock %}
+
+{% block content %}
+<div class="bg-navy text-white py-10 border-b border-navy-surface">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <span class="text-xs font-bold text-teal uppercase tracking-wider">Browser Storage &bull; No Login Required</span>
+        <h1 class="text-2xl sm:text-4xl font-heading font-black text-white mt-1">My Saved Jobs</h1>
+        <p class="text-sm text-slate-300 mt-2">Vacancies you have bookmarked for later review. Click directly to apply.</p>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="flex items-center justify-between pb-4 border-b border-surface-border">
+        <span class="text-sm font-semibold text-brandText">You have <strong id="saved-count" class="text-teal">0</strong> saved vacancies</span>
+        <button id="btn-clear-saved" class="text-xs font-bold text-red-500 hover:underline">Clear All</button>
+    </div>
+
+    <div id="saved-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6"></div>
+
+    <div id="empty-state" class="hidden text-center py-16 px-6 bg-white rounded-2xl border border-surface-border max-w-md mx-auto my-12">
+        <h3 class="font-heading font-bold text-xl text-navy mb-2">No Saved Jobs</h3>
+        <p class="text-xs text-brandText-muted mb-6">Bookmark any opening while browsing to view it here.</p>
+        <a href="/jobs" class="px-5 py-2.5 rounded-xl bg-teal text-white text-xs font-bold shadow-teal">Browse Jobs</a>
+    </div>
+</div>
+
+<script>
+    function render() {
+        const list = JSON.parse(localStorage.getItem('jobdisha_saved_jobs') || '[]');
+        const grid = document.getElementById('saved-grid');
+        const empty = document.getElementById('empty-state');
+        document.getElementById('saved-count').textContent = list.length;
+
+        if (list.length === 0) {
+            grid.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+
+        grid.innerHTML = list.map(j => `
+            <div class="bg-white rounded-2xl border border-surface-border p-6 shadow-soft flex flex-col justify-between">
+                <div>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <span class="text-xs font-bold text-brandText-muted">${j.company || ''}</span>
+                            <a href="/jobs/${j.slug}" class="block mt-1 font-heading font-bold text-base text-navy hover:text-teal leading-snug">${j.title}</a>
+                        </div>
+                        <button onclick="removeSaved('${j.slug}')" class="text-red-500 text-xs font-bold hover:underline">Remove</button>
+                    </div>
+                    <div class="text-xs text-brandText-muted mt-2">📍 ${j.city || ''}, ${j.state || ''}</div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-surface-border flex items-center justify-between">
+                    <a href="/jobs/${j.slug}" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-surface text-navy hover:bg-slate-200 transition-colors">View Details</a>
+                    ${(j.last_date && j.last_date < new Date().toISOString().slice(0, 10))
+                        ? `<button type="button" class="apply-expired-btn px-3.5 py-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 cursor-not-allowed" data-title="${(j.title || '').replace(/"/g, '&quot;')}" data-lastdate="${j.last_date}">Expired (${j.last_date})</button>`
+                        : `<a href="${j.apply_url || '#'}" target="_blank" class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-teal text-white hover:bg-teal-hover transition-colors">Apply</a>`
+                    }
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function removeSaved(slug) {
+        let list = JSON.parse(localStorage.getItem('jobdisha_saved_jobs') || '[]');
+        list = list.filter(j => j.slug !== slug);
+        localStorage.setItem('jobdisha_saved_jobs', JSON.stringify(list));
+        window.dispatchEvent(new CustomEvent('jobdisha:saved_updated'));
+        render();
+        if (window.jdToast) window.jdToast('Vacancy removed from your Saved Jobs list.', 'info', 2500, 'Removed');
+    }
+
+    document.getElementById('btn-clear-saved')?.addEventListener('click', () => {
+        window.jdConfirm({
+            title: 'Remove All Saved Jobs?',
+            message: 'Are you sure you want to clear all bookmarked vacancies from your browser storage?',
+            confirmText: 'Yes, Clear All',
+            cancelText: 'Cancel',
+            danger: true,
+            onConfirm: () => {
+                localStorage.removeItem('jobdisha_saved_jobs');
+                window.dispatchEvent(new CustomEvent('jobdisha:saved_updated'));
+                render();
+                if (window.jdToast) window.jdToast('All saved vacancies cleared.', 'success', 3000, 'Cleared');
+            }
+        });
+    });
+
+    render();
+</script>
+{% endblock %}
+

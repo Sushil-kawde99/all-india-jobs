@@ -1,0 +1,22 @@
+# Environments & Secrets (NEVER commit real secrets to GitHub!)
+.env
+.env.local
+.env.*.local
+
+# Local Database & Runtime Cache
+*.db
+*.db-*
+jobdisha_local.db
+
+# Python Cache & Virtual Environments
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+
+# Local Editor & Temp Files
+.vscode/
+scratch_*
+*.log

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Placement Readiness Checklist | JobDisha India{% endblock %}
+
+{% block content %}
+<div class="bg-navy text-white py-10 border-b border-navy-surface">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <span class="text-xs font-bold text-teal uppercase tracking-wider">Placement Preparation</span>
+        <h1 class="text-2xl sm:text-4xl font-heading font-black text-white mt-1">Job Readiness & Placement Checklist</h1>
+        <p class="text-sm text-slate-300 mt-2">Track every critical milestone before attending campus placements, walk-in drives, or off-campus technical interviews.</p>
+    </div>
+</div>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <!-- Progress Indicator -->
+    <div class="bg-white rounded-2xl border border-surface-border p-6 shadow-soft mb-8 sticky top-24 z-20">
+        <div class="flex items-center justify-between mb-2">
+            <span class="font-heading font-bold text-sm text-navy">Overall Readiness Score</span>
+            <span class="text-sm font-extrabold text-teal" id="pct-label">0%</span>
+        </div>
+        <div class="w-full h-3 rounded-full bg-surface-muted overflow-hidden">
+            <div id="bar-fill" class="h-full bg-teal transition-all duration-300" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- Checklists -->
+    <div class="space-y-6">
+        <div class="bg-white rounded-2xl border border-surface-border p-6 shadow-soft space-y-3">
+            <h3 class="font-heading font-bold text-base text-navy pb-2 border-b border-surface-border">1. Resume & ATS Checkpoints</h3>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Single page layout without tables that break ATS parsers</label>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Quantified bullet points (e.g. reduced latency by 30%)</label>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Pinned GitHub and active LinkedIn profile link</label>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-surface-border p-6 shadow-soft space-y-3">
+            <h3 class="font-heading font-bold text-base text-navy pb-2 border-b border-surface-border">2. Aptitude & Reasoning (Campus / Govt)</h3>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Quantitative: Percentages, Profit & Loss, Speed & Distance</label>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Logical: Blood Relations, Coding-Decoding, Syllogisms</label>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Verbal: Reading comprehension and error spotting</label>
+        </div>
+
+        <div class="bg-white rounded-2xl border border-surface-border p-6 shadow-soft space-y-3">
+            <h3 class="font-heading font-bold text-base text-navy pb-2 border-b border-surface-border">3. Technical & HR Interview Rounds</h3>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Core Data Structures: Arrays, HashMaps, Trees, SQL queries</label>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> Confident 90-second answer prepared for "Tell me about yourself"</label>
+            <label class="flex items-center gap-3 text-sm text-brandText cursor-pointer"><input type="checkbox" class="chk w-4 h-4 text-teal rounded"> STAR method stories ready for situational challenges</label>
+        </div>
+    </div>
+</div>
+
+<script>
+    const chks = document.querySelectorAll('.chk');
+    function update() {
+        let done = 0;
+        chks.forEach(c => { if (c.checked) done++; });
+        const pct = Math.round((done / chks.length) * 100);
+        document.getElementById('pct-label').textContent = `${pct}%`;
+        document.getElementById('bar-fill').style.width = `${pct}%`;
+    }
+    chks.forEach(c => c.addEventListener('change', update));
+</script>
+{% endblock %}
+

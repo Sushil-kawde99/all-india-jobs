@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Free ATS Resume Builder | Download PDF | JobDisha India{% endblock %}
+
+{% block content %}
+<div class="bg-navy text-white py-8 border-b border-navy-surface no-print">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+                <span class="px-3 py-1 rounded-full bg-teal/20 text-teal text-xs font-bold uppercase">100% Free &bull; Zero Server Storage &bull; 100% Private</span>
+                <h1 class="text-2xl sm:text-3xl font-heading font-black text-white mt-2">Professional ATS Resume Builder</h1>
+                <p class="text-sm text-slate-300 mt-1">Build an ATS-optimized resume in minutes. Data is stored exclusively in your browser.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <button type="button" id="btn-sample" class="px-3.5 py-2 rounded-xl bg-navy-surface text-slate-300 hover:text-white border border-teal/20 text-xs font-semibold">Load Sample</button>
+                <button type="button" id="btn-clear" class="px-3.5 py-2 rounded-xl bg-navy-surface text-slate-300 hover:text-red-300 border border-navy-light text-xs font-semibold">Clear</button>
+                <button type="button" id="btn-print" class="px-5 py-2.5 rounded-xl bg-teal hover:bg-teal-hover text-white text-xs font-bold shadow-teal">Download PDF / Print</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 no-print">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <!-- Form Editor (6 cols) -->
+        <div class="lg:col-span-6 space-y-6">
+            <!-- Personal Info -->
+            <div class="bg-white rounded-2xl border border-surface-border p-5 shadow-soft space-y-3">
+                <h3 class="font-heading font-bold text-sm text-navy uppercase tracking-wider pb-2 border-b border-surface-border">1. Personal Details</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="font-semibold text-brandText-muted block mb-1">Full Name</label>
+                        <input type="text" id="r-name" placeholder="Rahul Sharma" class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface font-semibold text-navy">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-brandText-muted block mb-1">Professional Title</label>
+                        <input type="text" id="r-title" placeholder="Full Stack Developer" class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface font-semibold text-navy">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-brandText-muted block mb-1">Email</label>
+                        <input type="email" id="r-email" placeholder="rahul@example.com" class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-brandText-muted block mb-1">Phone (+91)</label>
+                        <input type="tel" id="r-phone" placeholder="+91 98765 43210" class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-brandText-muted block mb-1">Location</label>
+                        <input type="text" id="r-location" placeholder="Pune, Maharashtra" class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    </div>
+                    <div>
+                        <label class="font-semibold text-brandText-muted block mb-1">LinkedIn / Portfolio</label>
+                        <input type="text" id="r-link" placeholder="linkedin.com/in/rahul" class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="bg-white rounded-2xl border border-surface-border p-5 shadow-soft space-y-2">
+                <h3 class="font-heading font-bold text-sm text-navy uppercase tracking-wider pb-2 border-b border-surface-border">2. Professional Summary</h3>
+                <textarea id="r-summary" rows="3" placeholder="Dedicated engineer with expertise in Python, FastAPI, and responsive interfaces..." class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface text-xs text-navy leading-relaxed"></textarea>
+            </div>
+
+            <!-- Skills -->
+            <div class="bg-white rounded-2xl border border-surface-border p-5 shadow-soft space-y-2">
+                <h3 class="font-heading font-bold text-sm text-navy uppercase tracking-wider pb-2 border-b border-surface-border">3. Technical & Core Skills</h3>
+                <input type="text" id="r-skills" placeholder="Python, FastAPI, SQL, React, Git, REST APIs, Problem Solving" class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface text-xs text-navy">
+            </div>
+
+            <!-- Education -->
+            <div class="bg-white rounded-2xl border border-surface-border p-5 shadow-soft space-y-3">
+                <h3 class="font-heading font-bold text-sm text-navy uppercase tracking-wider pb-2 border-b border-surface-border">4. Educational Qualifications</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <input type="text" id="r-degree" placeholder="B.Tech in Computer Science" class="px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    <input type="text" id="r-college" placeholder="Pune University / College Name" class="px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    <input type="text" id="r-year" placeholder="Year (e.g. 2022 – 2026)" class="px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    <input type="text" id="r-grade" placeholder="CGPA / Percentage (e.g. 8.6 CGPA)" class="px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                </div>
+            </div>
+
+            <!-- Work Experience -->
+            <div class="bg-white rounded-2xl border border-surface-border p-5 shadow-soft space-y-3">
+                <h3 class="font-heading font-bold text-sm text-navy uppercase tracking-wider pb-2 border-b border-surface-border">5. Work Experience / Internship</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                    <input type="text" id="r-exp-title" placeholder="Software Engineering Intern" class="px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                    <input type="text" id="r-exp-company" placeholder="Persistent Systems Ltd" class="px-3 py-2 rounded-xl border border-surface-border bg-surface text-navy">
+                </div>
+                <textarea id="r-exp-desc" rows="3" placeholder="Key responsibilities and achievements..." class="w-full px-3 py-2 rounded-xl border border-surface-border bg-surface text-xs text-navy"></textarea>
+            </div>
+        </div>
+
+        <!-- Live Preview (6 cols) -->
+        <div class="lg:col-span-6 lg:sticky lg:top-24">
+            <span class="text-xs font-bold text-navy uppercase mb-2 block">ATS Single-Page Live Preview</span>
+            <div id="resume-preview" class="bg-white rounded-xl border border-surface-border shadow-soft-lg p-8 font-sans text-slate-800 text-xs leading-normal print-page" style="min-height: 750px;">
+                <!-- Header -->
+                <div class="text-center border-b-2 border-slate-900 pb-3 mb-4">
+                    <h1 id="pv-name" class="text-2xl font-bold uppercase tracking-tight text-slate-900">Rahul Sharma</h1>
+                    <p id="pv-title" class="text-xs font-semibold text-slate-700 mt-0.5">Full Stack Developer</p>
+                    <div class="flex items-center justify-center gap-3 text-[11px] text-slate-600 mt-2">
+                        <span id="pv-email">rahul@example.com</span> &bull;
+                        <span id="pv-phone">+91 98765 43210</span> &bull;
+                        <span id="pv-location">Pune, Maharashtra</span>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="mb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Professional Summary</h2>
+                    <p id="pv-summary" class="text-slate-700 leading-relaxed text-justify">Dedicated engineer with expertise in Python, FastAPI, and responsive interfaces.</p>
+                </div>
+
+                <!-- Skills -->
+                <div class="mb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Technical & Core Skills</h2>
+                    <p id="pv-skills" class="text-slate-700 leading-relaxed">Python, FastAPI, SQL, React, Git, REST APIs, Problem Solving</p>
+                </div>
+
+                <!-- Education -->
+                <div class="mb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Education</h2>
+                    <div class="flex items-center justify-between font-bold text-slate-900">
+                        <span id="pv-degree">B.Tech in Computer Science</span>
+                        <span id="pv-year">2022 – 2026</span>
+                    </div>
+                    <div class="flex items-center justify-between text-slate-600 text-[11px]">
+                        <span id="pv-college">Pune University</span>
+                        <span id="pv-grade">8.6 CGPA</span>
+                    </div>
+                </div>
+
+                <!-- Experience -->
+                <div class="mb-4">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-0.5 mb-1.5">Experience</h2>
+                    <div class="font-bold text-slate-900" id="pv-exp-header">Software Engineering Intern &bull; Persistent Systems</div>
+                    <p id="pv-exp-desc" class="text-slate-700 mt-1 leading-relaxed">Developed core API endpoints with FastAPI and reduced latency by 30%.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const sample = {
+        name: "Rahul Sharma",
+        title: "Full Stack Python Developer",
+        email: "rahul.sharma@example.com",
+        phone: "+91 98765 43210",
+        location: "Pune, Maharashtra",
+        link: "linkedin.com/in/rahulsharma",
+        summary: "Proactive and solution-driven Software Engineer with a strong foundation in Python, FastAPI, and relational databases. Experienced in building responsive full-stack web applications and scalable RESTful microservices.",
+        skills: "Python, FastAPI, Jinja2, SQL, Turso, SQLite, JavaScript, Tailwind CSS, Docker, Git, REST APIs",
+        degree: "B.Tech in Computer Science & Engineering",
+        college: "Pune Institute of Computer Technology (PICT)",
+        year: "2022 – 2026",
+        grade: "8.8 CGPA",
+        exp_title: "Software Engineering Intern",
+        exp_company: "Persistent Systems Ltd",
+        exp_desc: "Engineered responsive full-stack features using Python and FastAPI.\nOptimized SQL queries reducing response times by 35%.\nCollaborated in an agile scrum team to deliver production microservices."
+    };
+
+    function bind(inputId, pvId) {
+        const inp = document.getElementById(inputId);
+        const pv = document.getElementById(pvId);
+        if (inp && pv) {
+            inp.addEventListener('input', () => { pv.textContent = inp.value; });
+        }
+    }
+
+    bind('r-name', 'pv-name');
+    bind('r-title', 'pv-title');
+    bind('r-email', 'pv-email');
+    bind('r-phone', 'pv-phone');
+    bind('r-location', 'pv-location');
+    bind('r-summary', 'pv-summary');
+    bind('r-skills', 'pv-skills');
+    bind('r-degree', 'pv-degree');
+    bind('r-college', 'pv-college');
+    bind('r-year', 'pv-year');
+    bind('r-grade', 'pv-grade');
+    bind('r-exp-desc', 'pv-exp-desc');
+
+    const expTitleInp = document.getElementById('r-exp-title');
+    const expCompInp = document.getElementById('r-exp-company');
+    const expHeadPv = document.getElementById('pv-exp-header');
+
+    function updateExpHeader() {
+        if (expHeadPv && expTitleInp && expCompInp) {
+            expHeadPv.textContent = `${expTitleInp.value} • ${expCompInp.value}`;
+        }
+    }
+    expTitleInp?.addEventListener('input', updateExpHeader);
+    expCompInp?.addEventListener('input', updateExpHeader);
+
+    function loadSample() {
+        document.getElementById('r-name').value = sample.name;
+        document.getElementById('r-title').value = sample.title;
+        document.getElementById('r-email').value = sample.email;
+        document.getElementById('r-phone').value = sample.phone;
+        document.getElementById('r-location').value = sample.location;
+        document.getElementById('r-summary').value = sample.summary;
+        document.getElementById('r-skills').value = sample.skills;
+        document.getElementById('r-degree').value = sample.degree;
+        document.getElementById('r-college').value = sample.college;
+        document.getElementById('r-year').value = sample.year;
+        document.getElementById('r-grade').value = sample.grade;
+        document.getElementById('r-exp-title').value = sample.exp_title;
+        document.getElementById('r-exp-company').value = sample.exp_company;
+        document.getElementById('r-exp-desc').value = sample.exp_desc;
+
+        document.getElementById('pv-name').textContent = sample.name;
+        document.getElementById('pv-title').textContent = sample.title;
+        document.getElementById('pv-email').textContent = sample.email;
+        document.getElementById('pv-phone').textContent = sample.phone;
+        document.getElementById('pv-location').textContent = sample.location;
+        document.getElementById('pv-summary').textContent = sample.summary;
+        document.getElementById('pv-skills').textContent = sample.skills;
+        document.getElementById('pv-degree').textContent = sample.degree;
+        document.getElementById('pv-college').textContent = sample.college;
+        document.getElementById('pv-year').textContent = sample.year;
+        document.getElementById('pv-grade').textContent = sample.grade;
+        document.getElementById('pv-exp-header').textContent = `${sample.exp_title} • ${sample.exp_company}`;
+        document.getElementById('pv-exp-desc').textContent = sample.exp_desc;
+    }
+
+    document.getElementById('btn-sample')?.addEventListener('click', () => {
+        loadSample();
+        if (window.jdToast) window.jdToast('Sample resume data loaded into editor & preview.', 'info', 2500, 'Sample Loaded');
+    });
+    document.getElementById('btn-print')?.addEventListener('click', () => { window.print(); });
+    document.getElementById('btn-clear')?.addEventListener('click', () => {
+        window.jdConfirm({
+            title: 'Clear All Resume Fields?',
+            message: 'This will empty all fields in the editor so you can start fresh. Your browser has no saved draft outside this form.',
+            confirmText: 'Yes, Clear All',
+            cancelText: 'Keep Editing',
+            danger: true,
+            onConfirm: () => {
+                document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+                if (window.jdToast) window.jdToast('All resume fields cleared.', 'success', 2500, 'Editor Reset');
+            }
+        });
+    });
+
+    loadSample();
+</script>
+{% endblock %}
+

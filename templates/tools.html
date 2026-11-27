@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Career Tools & Calculators | JobDisha India{% endblock %}
+
+{% block content %}
+<div class="bg-navy text-white py-12 border-b border-navy-surface">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <span class="text-xs font-bold text-teal uppercase tracking-wider">Free Career Utility Suite</span>
+        <h1 class="text-2xl sm:text-4xl font-heading font-black text-white mt-1">Career Tools & Calculators</h1>
+        <p class="text-sm text-slate-300 mt-2">Designed specifically for Indian graduates and job seekers. Estimate in-hand salary, check placement readiness, and build an ATS resume.</p>
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Tool 1 -->
+        <div class="bg-white rounded-2xl border border-surface-border p-8 shadow-soft flex flex-col justify-between">
+            <div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal/10 text-teal uppercase">Popular</span>
+                <h3 class="font-heading font-bold text-xl text-navy mt-3 mb-2">Free ATS Resume Builder</h3>
+                <p class="text-sm text-brandText-muted leading-relaxed mb-6">Create a recruiter-ready single-page resume formatted to pass ATS parsers. 100% private in browser with instant PDF download.</p>
+            </div>
+            <a href="/resume-builder" class="w-full py-3 rounded-xl bg-navy hover:bg-navy-light text-white text-xs font-bold text-center block">
+                Build Free Resume &rarr;
+            </a>
+        </div>
+
+        <!-- Tool 2 -->
+        <div class="bg-white rounded-2xl border border-surface-border p-8 shadow-soft flex flex-col justify-between">
+            <div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal/10 text-teal uppercase">Updated 2026</span>
+                <h3 class="font-heading font-bold text-xl text-navy mt-3 mb-2">In-Hand Salary Calculator</h3>
+                <p class="text-sm text-brandText-muted leading-relaxed mb-6">Calculate exact monthly take-home salary from your Annual CTC. Deducts EPF (12%), Professional Tax, and Income Tax TDS accurately.</p>
+            </div>
+            <a href="/tools/in-hand-salary-calculator" class="w-full py-3 rounded-xl bg-navy hover:bg-navy-light text-white text-xs font-bold text-center block">
+                Calculate Salary &rarr;
+            </a>
+        </div>
+
+        <!-- Tool 3 -->
+        <div class="bg-white rounded-2xl border border-surface-border p-8 shadow-soft flex flex-col justify-between">
+            <div>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-teal/10 text-teal uppercase">Checklist</span>
+                <h3 class="font-heading font-bold text-xl text-navy mt-3 mb-2">Placement Readiness Tracker</h3>
+                <p class="text-sm text-brandText-muted leading-relaxed mb-6">Interactive checklist covering Resume hygiene, LinkedIn optimization, Aptitude prep, Technical DSA, and HR interview answers.</p>
+            </div>
+            <a href="/tools/career-checklist" class="w-full py-3 rounded-xl bg-navy hover:bg-navy-light text-white text-xs font-bold text-center block">
+                View Checklist &rarr;
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

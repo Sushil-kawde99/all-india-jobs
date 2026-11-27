@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | JobDisha India</title>
+    {% include "partials/favicon_head.html" %}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: { DEFAULT: '#101B35', surface: '#152342' },
+                        teal: { DEFAULT: '#0DAF9C', hover: '#0A8F7F' },
+                        surface: '#F6F8FC'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-slate-800 antialiased min-h-screen flex flex-col font-sans">
+    <!-- Header -->
+    <header class="bg-navy text-white h-16 border-b border-navy-surface flex items-center justify-between px-6 sticky top-0 z-30">
+        <div class="flex items-center gap-6">
+            <a href="/admin" class="flex items-center gap-2.5 shrink-0">
+                <div class="bg-white rounded-xl px-2.5 py-1 flex items-center justify-center">
+                    <img src="/static/images/logo-header.png" alt="All India Jobs Logo" class="h-8 w-auto object-contain">
+                </div>
+                {% if is_super_admin %}
+                <span class="px-2 py-0.5 rounded-md bg-teal/20 text-teal text-[11px] font-extrabold uppercase tracking-wider border border-teal/30">Super Admin</span>
+                {% else %}
+                <span class="px-2 py-0.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[11px] font-extrabold uppercase tracking-wider border border-indigo-400/30">{{ admin.company_name }}</span>
+                {% endif %}
+            </a>
+            <nav class="hidden lg:flex items-center gap-1.5 text-xs font-semibold">
+                <a href="/admin" class="px-3 py-1.5 rounded-lg {% if active_tab in ('all', 'active') %}bg-teal text-white{% else %}text-slate-300 hover:text-white{% endif %}">Overview</a>
+                <a href="/admin?tab=expired" class="px-3 py-1.5 rounded-lg {% if active_tab == 'expired' %}bg-amber-500 text-white{% else %}text-slate-300 hover:text-white{% endif %}">
+                    ⏳ Expired ({{ stats.expiredGraceJobs + stats.purgeReadyJobs }})
+                </a>
+                {% if is_super_admin %}
+                <a href="/admin?tab=archive" class="px-3 py-1.5 rounded-lg {% if active_tab == 'archive' %}bg-indigo-600 text-white{% else %}text-slate-300 hover:text-white{% endif %}">
+                    📜 Archive History ({{ stats.archivedHistoryCount }})
+                </a>
+                <a href="/admin?tab=admins" class="px-3 py-1.5 rounded-lg {% if active_tab == 'admins' %}bg-purple-600 text-white{% else %}text-slate-300 hover:text-white{% endif %}">
+                    👥 Company Admins &amp; Settings
+                </a>
+                <a href="/admin/import-csv" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white">CSV Import</a>
+                {% endif %}
+                {% if is_super_admin or admin.can_add_jobs == 1 %}
+                <a href="/admin/jobs/new" class="px-3 py-1.5 rounded-lg text-slate-300 hover:text-white">+ Post Job</a>
+                {% endif %}
+            </nav>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="hidden sm:inline text-xs text-slate-400">Logged in: <strong class="text-white">{{ admin.username }}</strong></span>
+            <a href="/" target="_blank" class="px-3 py-1.5 rounded-lg bg-navy-surface text-slate-300 text-xs font-semibold border border-slate-700 hover:text-white">Live Portal &rarr;</a>
+            <form method="POST" action="/admin/logout">
+                <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-950 text-red-200 text-xs font-semibold hover:bg-red-900">Logout</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 flex-grow">
+        <!-- Status Banner -->
+        {% if is_super_admin %}
+        <div class="mb-8 p-4 rounded-2xl border flex flex-col lg:flex-row lg:items-center justify-between gap-4 {% if is_turso %}bg-emerald-50 border-emerald-200 text-emerald-900{% else %}bg-amber-50 border-amber-200 text-amber-900{% endif %}">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full shrink-0 {% if is_turso %}bg-emerald-500 animate-pulse{% else %}bg-amber-500{% endif %}"></div>
+                <div>
+                    <h4 class="font-bold text-sm">
+                        {% if is_turso %}
+                            Super Admin Control &bull; Turso Cloud Connected (my-portfolio-db)
+                        {% else %}
+                            Local SQLite Fallback Active (Turso Cloud Offline)
+                        {% endif %}
+                    </h4>
+                    <p class="text-xs opacity-90">
+                        Manage all portal jobs, provision isolated Company Admins, set owner contact on login, or archive expired roles ({{ grace_days }}d grace).
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+                <form method="POST" action="/admin/sync-jobs" class="inline">
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-sm flex items-center gap-1.5 transition-all">
+                        <span>🔄</span> Auto-Sync Live Govt Jobs
+                    </button>
+                </form>
+                <form id="purge-form" method="POST" action="/admin/purge-expired" class="inline">
+                    <button type="button" onclick="confirmPurge({{ stats.purgeReadyJobs }})" class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm flex items-center gap-1 transition-all">
+                        <span>🧹</span> Purge Expired ({{ stats.purgeReadyJobs }})
+                    </button>
+                </form>
+                <a href="/admin?tab=admins" class="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold shadow-sm">👥 Manage Company Admins</a>
+                <a href="/admin/export-csv" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold shadow-sm hover:bg-slate-50">Export CSV</a>
+                <a href="/admin/jobs/new" class="px-4 py-1.5 rounded-xl bg-teal hover:bg-teal-hover text-white text-xs font-bold shadow-sm">+ Post Vacancy</a>
+            </div>
+        </div>
+        {% else %}
+        <div class="mb-8 p-4 rounded-2xl border bg-indigo-50 border-indigo-200 text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shrink-0">🏢</div>
+                <div>
+                    <h4 class="font-bold text-sm">{{ admin.company_name }} — Employer Admin Portal</h4>
+                    <p class="text-xs text-indigo-800 mt-0.5">
+                        {% if admin.can_view_all_jobs == 1 %}
+                            🌐 Owner granted access to view all portal jobs (your edits stay scoped to <strong>{{ admin.company_name }}</strong>).
+                        {% else %}
+                            🔒 Private Workspace: Showing <strong>ONLY your company's posted vacancies</strong>. Owner's other jobs are hidden.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% if admin.can_add_jobs == 1 %}
+            <a href="/admin/jobs/new" class="px-4 py-2 rounded-xl bg-teal hover:bg-teal-hover text-white text-xs font-bold shadow-sm shrink-0">+ Post {{ admin.company_name }} Job</a>
+            {% else %}
+            <span class="px-3 py-1.5 rounded-xl bg-slate-200 text-slate-700 text-xs font-bold shrink-0">🚫 Read-Only Access</span>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Stats -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+            <a href="/admin?tab=all" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-teal transition-all">
+                <span class="text-xs text-slate-500 font-semibold block">{% if is_super_admin %}Total In Cloud DB{% else %}Visible Vacancies{% endif %}</span>
+                <span class="text-3xl font-extrabold text-navy mt-1 block">{{ stats.totalJobs }}</span>
+                <span class="text-xs text-teal font-bold mt-1 block">{{ stats.publishedTotal }} Published &bull; {{ stats.inactiveJobs }} Draft</span>
+            </a>
+            <a href="/admin?tab=active" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:border-emerald-400 transition-all">
+                <span class="text-xs text-slate-500 font-semibold block">🟢 Open Active Jobs</span>
+                <span class="text-3xl font-extrabold text-emerald-600 mt-1 block">{{ stats.activeJobs }}</span>
+                <span class="text-xs text-slate-500 mt-1 block">{{ stats.governmentJobs }} Govt &bull; {{ stats.itJobs }} IT</span>
+            </a>
+            <a href="/admin?tab=expired" class="bg-white p-5 rounded-2xl border {% if stats.expiredGraceJobs > 0 %}border-amber-300 bg-amber-50/30{% else %}border-slate-200{% endif %} shadow-sm hover:border-amber-500 transition-all">
+                <span class="text-xs text-amber-800 font-semibold block">⏳ Expired (Grace 1–{{ grace_days }}d)</span>
+                <span class="text-3xl font-extrabold text-amber-600 mt-1 block">{{ stats.expiredGraceJobs }}</span>
+                <span class="text-xs text-amber-700 mt-1 block">Apply disabled &bull; Extendable</span>
+            </a>
+            {% if is_super_admin %}
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <span class="text-xs text-slate-500 font-semibold block">Ready for Auto-Purge</span>
+                <span class="text-3xl font-extrabold text-red-600 mt-1 block">{{ stats.purgeReadyJobs }}</span>
+                <span class="text-xs text-slate-500 mt-1 block">{{ grace_days }}+ days past deadline</span>
+            </div>
+            <a href="/admin?tab=archive" class="bg-white p-5 rounded-2xl border border-indigo-200 bg-indigo-50/20 shadow-sm hover:border-indigo-400 transition-all">
+                <span class="text-xs text-indigo-800 font-semibold block">📜 Archived History</span>
+                <span class="text-3xl font-extrabold text-indigo-600 mt-1 block">{{ stats.archivedHistoryCount }}</span>
+                <span class="text-xs text-indigo-700 font-semibold mt-1 block">Saved in CSV (0 DB Space)</span>
+            </a>
+            {% else %}
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm col-span-2">
+                <span class="text-xs text-slate-500 font-semibold block">Posting Permission</span>
+                <span class="text-xl font-extrabold text-navy mt-1 block">
+                    {% if admin.can_add_jobs == 1 %}✅ Authorized to Post &amp; Manage{% else %}🚫 View-Only Mode{% endif %}
+                </span>
+                <span class="text-xs text-slate-500 mt-1 block">Company Scope: {{ admin.company_name }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tabs Navigation -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="/admin?tab=all" class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if active_tab == 'all' %}bg-navy text-white shadow-sm{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">
+                    Jobs List ({{ stats.totalJobs }})
+                </a>
+                <a href="/admin?tab=active" class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if active_tab == 'active' %}bg-emerald-600 text-white shadow-sm{% else %}bg-white text-slate-600 border border-slate-200 hover:bg-slate-50{% endif %}">
+                    🟢 Active Open ({{ stats.activeJobs }})
+                </a>
+                <a href="/admin?tab=expired" class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if active_tab == 'expired' %}bg-amber-600 text-white shadow-sm{% else %}bg-white text-amber-800 border border-amber-200 hover:bg-amber-50{% endif %}">
+                    ⏳ Expired / Grace ({{ stats.expiredGraceJobs + stats.purgeReadyJobs }})
+                </a>
+                {% if is_super_admin %}
+                <a href="/admin?tab=archive" class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if active_tab == 'archive' %}bg-indigo-600 text-white shadow-sm{% else %}bg-white text-indigo-800 border border-indigo-200 hover:bg-indigo-50{% endif %}">
+                    📜 Archived History ({{ stats.archivedHistoryCount }})
+                </a>
+                <a href="/admin?tab=admins" class="px-4 py-2 rounded-xl text-xs font-bold transition-all {% if active_tab == 'admins' %}bg-purple-600 text-white shadow-sm{% else %}bg-white text-purple-800 border border-purple-200 hover:bg-purple-50{% endif %}">
+                    👥 Company Admins &amp; Contact ({{ admin_users | length }})
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if is_super_admin and active_tab == 'admins' %}
+        <!-- SUPER ADMIN ONLY: Company Admin Access Control & Owner Contact Settings -->
+        <div class="space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Card 1: Owner Contact Number for Admin Login Page -->
+                <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-5">
+                        <div class="w-10 h-10 rounded-xl bg-teal/15 text-teal flex items-center justify-center text-lg">📞</div>
+                        <div>
+                            <h3 class="font-bold text-base text-navy">Portal Owner Contact (Login Page वर दाखवण्यासाठी)</h3>
+                            <p class="text-xs text-slate-500">समोरच्या व्यक्तीला ॲडमिन ॲक्सेस हवा असल्यास इथे तुमचा नंबर टाका — तो लॉगिन पेजवर लगेच दिसेल.</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="/admin/settings/contact" class="space-y-4 text-xs font-semibold">
+                        <div>
+                            <label class="block mb-1 text-navy">Owner Display Name *</label>
+                            <input type="text" name="contact_name" required value="{{ contact.name if contact else '' }}" placeholder="e.g. Sushil" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm">
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-navy">Mobile / WhatsApp Number (Call &amp; WhatsApp साठी)</label>
+                            <input type="text" name="contact_phone" value="{{ contact.phone if contact else '' }}" placeholder="e.g. +91 98XXXXXXXX" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm">
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-navy">Notice Message on Login Page</label>
+                            <input type="text" name="contact_note" value="{{ contact.note if contact else '' }}" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm">
+                        </div>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-teal hover:bg-teal-hover text-white font-bold text-xs shadow-sm">
+                            💾 Save Contact Number on Login Page
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Card 2: Create New Company Admin Account -->
+                <div class="bg-white rounded-2xl border border-purple-200 p-6 shadow-sm">
+                    <div class="flex items-center gap-3 pb-4 border-b border-slate-100 mb-5">
+                        <div class="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center text-lg">👤</div>
+                        <div>
+                            <h3 class="font-bold text-base text-navy">Create New Company Admin (नवीन कंपनी ॲडमिन बनवा)</h3>
+                            <p class="text-xs text-slate-500">एखाद्या कंपनीला स्वतंत्र लॉगिन देण्यासाठी नवीन अकाउंट बनवा आणि अ‍ॅक्सेस नियंत्रित करा.</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="/admin/admins/create" class="space-y-4 text-xs font-semibold">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block mb-1 text-navy">Company / Client Name *</label>
+                                <input type="text" name="company_name" required placeholder="e.g. TCS Recruitment" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm">
+                            </div>
+                            <div>
+                                <label class="block mb-1 text-navy">Login Username *</label>
+                                <input type="text" name="username" required placeholder="e.g. tcs_hr" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block mb-1 text-navy">Password *</label>
+                            <input type="password" name="password" required minlength="6" placeholder="Minimum 6 characters" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm">
+                        </div>
+                        <div class="space-y-2 pt-1">
+                            <label class="flex items-start gap-2.5 cursor-pointer p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                                <input type="checkbox" name="can_view_all_jobs" value="1" class="mt-0.5 rounded text-purple-600">
+                                <span class="text-xs text-slate-700 font-medium leading-snug">
+                                    <strong class="text-navy">Show All Existing Portal Jobs?</strong> (टिक काढलेले ठेवल्यास या कंपनीला तुमचे जुने जॉब्स दिसणार नाहीत — फक्त तिचेच स्वतःचे जॉब्स दिसतील!)
+                                </span>
+                            </label>
+                            <label class="flex items-start gap-2.5 cursor-pointer p-2.5 rounded-xl bg-emerald-50/50 border border-emerald-200">
+                                <input type="checkbox" name="can_add_jobs" value="1" checked class="mt-0.5 rounded text-emerald-600">
+                                <span class="text-xs text-slate-700 font-medium leading-snug">
+                                    <strong class="text-navy">Allow Adding &amp; Managing Own Jobs</strong> (कंपनीला स्वतःच्या नवीन नोकऱ्या अ‍ॅड आणि एडिट करण्याची परवानगी द्या)
+                                </span>
+                            </label>
+                        </div>
+                        <button type="submit" class="w-full py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs shadow-sm">
+                            + Create Company Admin Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Card 3: Existing Company Admins & 1-Click Toggles -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-sm text-navy">Provisioned Company Admins ({{ admin_users | length }})</h3>
+                        <p class="text-[11px] text-slate-500">कोणत्या कंपनीला कोणते जॉब दिसतील आणि तिला नवीन जॉब टाकता येतील का, हे एका क्लिकवर ठरवा.</p>
+                    </div>
+                </div>
+                {% if admin_users %}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold">
+                                <th class="py-3 px-4">Company &amp; Username</th>
+                                <th class="py-3 px-4">Own Posted Jobs</th>
+                                <th class="py-3 px-4">All Jobs Access Toggle</th>
+                                <th class="py-3 px-4">Can Add Jobs Toggle</th>
+                                <th class="py-3 px-4">Status Toggle</th>
+                                <th class="py-3 px-4 text-right">Remove</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            {% for u in admin_users %}
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-3 px-4">
+                                    <span class="font-bold text-navy text-sm block">{{ u.company_name }}</span>
+                                    <span class="text-slate-500">@{{ u.username }}</span>
+                                </td>
+                                <td class="py-3 px-4 font-bold text-navy">{{ u.jobs_count }} jobs</td>
+                                <td class="py-3 px-4">
+                                    <form method="POST" action="/admin/admins/toggle" class="inline">
+                                        <input type="hidden" name="admin_id" value="{{ u.id }}">
+                                        <input type="hidden" name="column" value="can_view_all_jobs">
+                                        <button type="submit" class="px-3 py-1 rounded-full font-bold text-[11px] transition-colors {% if u.can_view_all_jobs == 1 %}bg-blue-100 text-blue-800 hover:bg-blue-200{% else %}bg-slate-100 text-slate-700 hover:bg-slate-200{% endif %}">
+                                            {% if u.can_view_all_jobs == 1 %}🌐 All Jobs Visible (Click to Isolate){% else %}🔒 Only Own Company Jobs{% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <form method="POST" action="/admin/admins/toggle" class="inline">
+                                        <input type="hidden" name="admin_id" value="{{ u.id }}">
+                                        <input type="hidden" name="column" value="can_add_jobs">
+                                        <button type="submit" class="px-3 py-1 rounded-full font-bold text-[11px] transition-colors {% if u.can_add_jobs == 1 %}bg-emerald-100 text-emerald-800 hover:bg-emerald-200{% else %}bg-amber-100 text-amber-800 hover:bg-amber-200{% endif %}">
+                                            {% if u.can_add_jobs == 1 %}✅ Can Add Jobs{% else %}🚫 View-Only (No Add){% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <form method="POST" action="/admin/admins/toggle" class="inline">
+                                        <input type="hidden" name="admin_id" value="{{ u.id }}">
+                                        <input type="hidden" name="column" value="is_active">
+                                        <button type="submit" class="px-3 py-1 rounded-full font-bold text-[11px] {% if u.is_active == 1 %}bg-teal/15 text-teal-800{% else %}bg-red-100 text-red-700{% endif %}">
+                                            {% if u.is_active == 1 %}Active{% else %}Disabled{% endif %}
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="py-3 px-4 text-right">
+                                    <form id="del-admin-{{ u.id }}" method="POST" action="/admin/admins/delete" class="inline">
+                                        <input type="hidden" name="admin_id" value="{{ u.id }}">
+                                        <button type="button" onclick="confirmDeleteAdmin({{ u.id }}, '{{ u.company_name | e }}')" class="px-2.5 py-1 rounded text-red-600 hover:bg-red-50 font-semibold">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="p-8 text-center text-xs text-slate-500">
+                    अद्याप कोणताही कंपनी ॲडमिन तयार केलेला नाही. वरील फॉर्ममधून नवीन कंपनीसाठी अकाउंट बनवा!
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Card 4: Clean-Slate Handover Reset -->
+            <div class="bg-red-50/60 rounded-2xl border border-red-200 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h4 class="font-bold text-sm text-red-900">⚠️ Handover Clean-Slate Reset (तुमचे सर्व जुने जॉब्स Archive करून साफ करा)</h4>
+                    <p class="text-xs text-red-700 mt-0.5">जर तुम्हाला संपूर्ण वेबसाइट एका कंपनीला कोरी (0 jobs सह) द्यायची असेल, तर हे बटण तुमच्या सध्याच्या सर्व {{ stats.totalJobs }} नोकऱ्या आधी Archive CSV मध्ये सुरक्षित सेव्ह करेल आणि नंतर डेटाबेसमधून साफ करेल.</p>
+                </div>
+                <form id="reset-all-form" method="POST" action="/admin/reset-all-jobs" class="shrink-0">
+                    <button type="button" onclick="confirmResetAll({{ stats.totalJobs }})" class="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-bold shadow-sm">
+                        🗑️ Archive All &amp; Clear DB
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% elif is_super_admin and active_tab == 'archive' %}
+        <!-- Archived & Deleted History Section (Zero DB Storage Used) -->
+        <div class="bg-white rounded-2xl border border-indigo-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-indigo-100 bg-indigo-50/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h3 class="font-bold text-sm text-navy">📜 Archived &amp; Deleted Vacancies History ({{ archived_jobs | length }})</h3>
+                    <p class="text-[11px] text-slate-600 mt-0.5">These vacancies were automatically removed from Turso Cloud after {{ grace_days }} days (or deleted by admin) to prevent database bloat, and safely archived to CSV.</p>
+                </div>
+                <a href="/admin/archive/download" class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shrink-0 text-center">
+                    ⬇️ Download Archive CSV
+                </a>
+            </div>
+
+            {% if archived_jobs %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold">
+                            <th class="py-3 px-4">Title &amp; Company</th>
+                            <th class="py-3 px-4">Location &amp; Category</th>
+                            <th class="py-3 px-4">Original Last Date</th>
+                            <th class="py-3 px-4">Archived On &amp; Reason</th>
+                            <th class="py-3 px-4 text-right">Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for aj in archived_jobs %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="py-3 px-4">
+                                <span class="font-bold text-navy block text-sm">{{ aj.title }}</span>
+                                <span class="text-slate-500 block">{{ aj.company }}</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="font-medium block">{{ aj.city }}, {{ aj.state }}</span>
+                                <span class="text-[11px] text-slate-500">{{ aj.category }}</span>
+                            </td>
+                            <td class="py-3 px-4 font-semibold text-slate-700">{{ aj.last_date or 'N/A' }}</td>
+                            <td class="py-3 px-4">
+                                <span class="inline-block px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">{{ aj.archive_reason }}</span>
+                                <span class="block text-[11px] text-slate-500 mt-0.5">{{ aj.archived_at }}</span>
+                            </td>
+                            <td class="py-3 px-4 text-right">
+                                {% if aj.apply_url %}
+                                <a href="{{ aj.apply_url }}" target="_blank" class="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 font-semibold text-navy">Link &rarr;</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-12 text-center text-slate-500 text-xs">
+                <p class="font-bold text-sm text-navy mb-1">No Archived Jobs Yet</p>
+                <p>When vacancies pass {{ grace_days }} days after their last date, they will be safely backed up here and cleared from Turso Cloud.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        {% else %}
+        <!-- Live Turso Cloud Jobs Table (Scoped for Company Admins) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+                <h3 class="font-bold text-sm text-navy">
+                    {% if active_tab == 'expired' %}
+                        ⏳ Expired Jobs in Grace Period / Pending Purge ({{ jobs.filtered_total }})
+                    {% elif active_tab == 'active' %}
+                        🟢 Active Open Vacancies ({{ jobs.filtered_total }})
+                    {% else %}
+                        {% if is_super_admin %}All Cloud Database Vacancies{% else %}Your Managed Vacancies{% endif %} ({{ jobs.filtered_total }})
+                    {% endif %}
+                </h3>
+                {% if is_super_admin or admin.can_add_jobs == 1 %}
+                <a href="/admin/jobs/new" class="text-xs font-bold text-teal hover:underline">+ Add New</a>
+                {% endif %}
+            </div>
+
+            {% if jobs.data %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold">
+                            <th class="py-3 px-4">Title &amp; Company</th>
+                            <th class="py-3 px-4">Location &amp; Owner</th>
+                            <th class="py-3 px-4">Deadline &amp; Expiry Status</th>
+                            <th class="py-3 px-4">Visibility</th>
+                            <th class="py-3 px-4 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        {% for job in jobs.data %}
+                        <tr class="{% if job.is_expired %}bg-amber-50/40 hover:bg-amber-50/70{% else %}hover:bg-slate-50{% endif %}">
+                            <td class="py-3 px-4">
+                                <a href="/jobs/{{ job.slug }}" target="_blank" class="font-bold text-navy hover:text-teal block text-sm">{{ job.title }}</a>
+                                <span class="text-slate-500 block">{{ job.company }}</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="font-medium block">{{ job.city }}, {{ job.state }}</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-100 font-medium text-[10px] inline-block mt-1">{{ job.category }}</span>
+                                <span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px] inline-block mt-1 ml-1">{{ job.owner_company }}</span>
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="font-bold text-navy block">{{ job.last_date or 'No Deadline' }}</span>
+                                {% if job.expiry_status == 'purge_ready' %}
+                                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-bold">
+                                        🔴 Expired {{ job.days_expired }}d ago (Purge Ready)
+                                    </span>
+                                {% elif job.is_expired %}
+                                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
+                                        ⏳ Expired {{ job.days_expired }}d ago &bull; Auto-deletes in {{ job.purge_in_days }}d
+                                    </span>
+                                {% elif job.is_extended %}
+                                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                        📅 Extended (from {{ job.extended_from }})
+                                    </span>
+                                {% elif job.days_remaining is not none %}
+                                    <span class="inline-block mt-1 px-2 py-0.5 rounded-full bg-teal/15 text-teal-800 text-[10px] font-bold">
+                                        🟢 {{ job.days_remaining }}d remaining
+                                    </span>
+                                {% else %}
+                                    <span class="text-[11px] text-slate-400">Always Open</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {% if job.is_active == 1 %}bg-emerald-100 text-emerald-800{% else %}bg-slate-200 text-slate-700{% endif %}">
+                                    {% if job.is_active == 1 %}Published{% else %}Draft{% endif %}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
+                                {% if job.can_modify %}
+                                    <button type="button" onclick="openExtendModal({{ job.id }}, '{{ job.title | e }}', '{{ job.last_date or '' }}')" class="px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 font-semibold">
+                                        📅 Extend Date
+                                    </button>
+                                    <form method="POST" action="/admin/jobs/toggle" class="inline">
+                                        <input type="hidden" name="id" value="{{ job.id }}">
+                                        <input type="hidden" name="is_active" value="{{ job.is_active }}">
+                                        <button type="submit" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 font-semibold">
+                                            {% if job.is_active == 1 %}Unpublish{% else %}Publish{% endif %}
+                                        </button>
+                                    </form>
+                                    <a href="/admin/jobs/edit/{{ job.id }}" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 font-semibold">Edit</a>
+                                    <form id="delete-form-{{ job.id }}" method="POST" action="/admin/jobs/delete" class="inline">
+                                        <input type="hidden" name="id" value="{{ job.id }}">
+                                        <button type="button" onclick="confirmDeleteJob({{ job.id }}, '{{ job.title | e }}')" class="px-2 py-1 rounded text-red-600 hover:bg-red-50 font-semibold">Delete</button>
+                                    </form>
+                                {% else %}
+                                    <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[11px] font-semibold">🔒 Owner Protected (View-Only)</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="p-12 text-center text-slate-500 text-xs space-y-3">
+                <p class="font-bold text-sm text-navy">
+                    {% if not is_super_admin %}अद्याप तुमच्या कंपनीच्या कोणत्याही नोकऱ्या पोस्ट केलेल्या नाहीत{% else %}No Vacancies Found{% endif %}
+                </p>
+                {% if is_super_admin or admin.can_add_jobs == 1 %}
+                <a href="/admin/jobs/new" class="inline-block px-5 py-2.5 rounded-xl bg-teal text-white font-bold text-xs">+ Post First Vacancy</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </main>
+
+    <!-- Extend Deadline Modal (मुदतवाढ) -->
+    <div id="extend-modal" class="hidden fixed inset-0 z-[104] bg-navy/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative">
+            <button type="button" onclick="closeExtendModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center font-bold">&times;</button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center text-lg">📅</div>
+                <div>
+                    <h3 class="font-extrabold text-base text-navy">Extend Deadline (मुदतवाढ द्या)</h3>
+                    <p id="extend-job-title" class="text-xs text-slate-500 truncate max-w-[260px]"></p>
+                </div>
+            </div>
+            <form method="POST" action="/admin/jobs/extend" class="space-y-4">
+                <input type="hidden" name="id" id="extend-job-id">
+                <div>
+                    <label class="block text-xs font-bold text-navy uppercase mb-1">New Extended Last Date *</label>
+                    <input type="date" name="last_date" id="extend-last-date" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-sm font-semibold focus:bg-white focus:border-teal outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1.5">ही नवीन तारीख सेव्ह करताच ही नोकरी पुन्हा युझर्ससाठी <strong>Open &amp; Active</strong> होईल!</p>
+                </div>
+                <div class="flex items-center justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeExtendModal()" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-teal hover:bg-teal-hover text-white text-xs font-bold shadow-sm">Save New Deadline</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% include "partials/popups.html" %}
+
+    <script>
+        function confirmDeleteJob(id, title) {
+            window.jdConfirm({
+                title: 'Archive & Delete Vacancy?',
+                message: `<strong>${title}</strong> ही नोकरी लाइव्ह Turso डेटाबेसमधून डिलीट होईल आणि तिचा रेकॉर्ड <strong>Archive History (CSV)</strong> मध्ये कायमचा सेव्ह राहील.`,
+                confirmText: 'Yes, Archive & Delete',
+                cancelText: 'Keep Vacancy',
+                danger: true,
+                onConfirm: () => {
+                    document.getElementById('delete-form-' + id).submit();
+                }
+            });
+        }
+
+        function confirmPurge(count) {
+            if (count === 0) {
+                window.jdPopup({
+                    title: 'Database Already Clean!',
+                    badge: 'No Purge Needed',
+                    type: 'info',
+                    icon: '✨',
+                    message: 'सध्या १६+ दिवसांपूर्वी मुदत संपलेली कोणतीही जुनी नोकरी डेटाबेसमध्ये नाही. डेटाबेस पूर्णपणे स्वच्छ आहे!',
+                    primaryText: 'OK'
+                });
+                return;
+            }
+            window.jdConfirm({
+                title: `Archive & Clean ${count} Expired Jobs?`,
+                message: `१६+ दिवसांपूर्वी मुदत संपलेल्या सर्व <strong>${count} नोकऱ्या</strong> आधी CSV Archive इतिहास फाईलमध्ये सेव्ह केल्या जातील आणि नंतर Turso डेटाबेसमधून डिलीट होतील.`,
+                confirmText: 'Yes, Archive & Purge Now',
+                cancelText: 'Cancel',
+                danger: false,
+                onConfirm: () => {
+                    document.getElementById('purge-form').submit();
+                }
+            });
+        }
+
+        function confirmDeleteAdmin(adminId, companyName) {
+            window.jdConfirm({
+                title: `Delete ${companyName} Admin?`,
+                message: `<strong>${companyName}</strong> चे ॲडमिन लॉगिन अकाउंट कायमचे डिलीट करायचे आहे का?`,
+                confirmText: 'Yes, Delete Admin',
+                cancelText: 'Cancel',
+                danger: true,
+                onConfirm: () => {
+                    document.getElementById('del-admin-' + adminId).submit();
+                }
+            });
+        }
+
+        function confirmResetAll(totalCount) {
+            window.jdConfirm({
+                title: `Archive & Clear All ${totalCount} Jobs?`,
+                message: `तुमच्या सध्याच्या सर्व <strong>${totalCount} नोकऱ्या</strong> आधी <strong>Archive History (CSV)</strong> मध्ये सुरक्षित सेव्ह केल्या जातील आणि लाइव्ह डेटाबेस संपूर्ण रिकामा (Clean Slate) केला जाईल — जेणेकरून नवीन कंपनीला कोरी वेबसाइट देता येईल. खात्री आहे का?`,
+                confirmText: 'Yes, Backup & Clear All',
+                cancelText: 'Cancel',
+                danger: true,
+                onConfirm: () => {
+                    document.getElementById('reset-all-form').submit();
+                }
+            });
+        }
+
+        function openExtendModal(id, title, currentLastDate) {
+            document.getElementById('extend-job-id').value = id;
+            document.getElementById('extend-job-title').textContent = title;
+            const dateInput = document.getElementById('extend-last-date');
+            dateInput.value = currentLastDate || '';
+            document.getElementById('extend-modal').classList.remove('hidden');
+        }
+
+        function closeExtendModal() {
+            document.getElementById('extend-modal').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
